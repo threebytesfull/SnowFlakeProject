@@ -1,0 +1,4 @@
+r
+loadbin main.bin, 0
+rx 5
+q
