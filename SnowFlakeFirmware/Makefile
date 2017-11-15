@@ -18,11 +18,11 @@ GDB=$(CROSS_COMPILE)gdb
 
 INC += -I $(CMSIS)/Include -I $(SAMD20)/include
 
-CFLAGS += -mthumb -D__SAMD20E15__ -DNDEBUG $(INC)
-CFLAGS += -Os -ffunction-sections -Wall -mcpu=cortex-m0plus -c -std=gnu99
+CFLAGS += -mthumb -D__SAMD20E15__ $(INC)
+CFLAGS += -ffunction-sections -Wall -mcpu=cortex-m0plus -c -std=gnu99
 
-CXXFLAGS += -mthumb -D__SAMD20E15__ -DNDEBUG $(INC)
-CXXFLAGS += -O3 -ffunction-sections -funsafe-math-optimizations
+CXXFLAGS += -mthumb -D__SAMD20E15__ $(INC)
+CXXFLAGS += -ffunction-sections -funsafe-math-optimizations
 CXXFLAGS += -ffast-math -fno-rtti -fno-exceptions -Wall -mcpu=cortex-m0plus -c
 
 LDSCRIPT = Device_Startup/samd20e15_flash.ld
@@ -33,6 +33,16 @@ LDFLAGS += -funsafe-math-optimizations -ffast-math -mcpu=cortex-m0plus -T $(LDSC
 
 SRCS = $(wildcard src/*.cpp) $(wildcard src/scene/*.cpp) $(wildcard Device_Startup/*.c)
 OBJS = $(addsuffix .o, $(basename $(SRCS)))
+
+ifeq ($(DEBUG),)
+	OBJCOPY_STRIP = --strip-unneeded
+	CFLAGS += -DNDEBUG -Os
+	CXXFLAGS += -DNDEBUG -O3
+else
+	OBJCOPY_STRIP =
+	CFLAGS += -DDEBUG -g -F dwarf -Og
+	CXXFLAGS += -DDEBUG -g -F dwarf -Og
+endif
 
 ifeq ($(BMP_PORT),)
 	BMP_PORT_CANDIDATES := $(wildcard \
@@ -52,7 +62,7 @@ main.elf: $(OBJS) $(LDSCRIPT)
 	$(LD) $(LDFLAGS) $(LIBS) -o $@ $(OBJS)
 
 %.bin: %.elf
-	$(OBJCOPY) --strip-unneeded -O binary $< $@
+	$(OBJCOPY) $(OBJCOPY_STRIP) -O binary $< $@
 
 %.hex: %.elf
 	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .lock -R .signature $< $@
