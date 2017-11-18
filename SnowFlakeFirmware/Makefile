@@ -51,7 +51,7 @@ ifeq ($(BMP_PORT),)
 	ifeq ($(words $(BMP_PORT_CANDIDATES)),1)
 		BMP_PORT := $(BMP_PORT_CANDIDATES)
 	else
-		BMP_PORT := $(error Black Magic Probe gdb serial port not found, please provide the device name via the BMP_PORT variable parameter$( if \
+		BMP_PORT = $(error Black Magic Probe gdb serial port not found, please provide the device name via the BMP_PORT variable parameter$( if \
 			$(BMP_PORT_CANDIDATES), (found $(BMP_PORT_CANDIDATES))))
 	endif
 endif
