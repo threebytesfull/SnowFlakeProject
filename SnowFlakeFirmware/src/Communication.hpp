@@ -29,8 +29,60 @@
 namespace Communication {
 
 
+/// The function called after a synchronization request is received on a client.
+///
 typedef void (*SynchronizationFn)();
+
+/// The function which is called if a new value is read on a client.
+///
 typedef void (*ReadDataFn)(uint32_t data);
+
+/// Errors for the communication.
+///
+enum class Error : uint8_t {
+	/// No error
+	///
+	None = 0,
+	
+	/// A timeout occurred while waiting for the data input to be set back to the low state.
+	///
+	/// Possible reasons for this error:
+	/// - A short is holding the input data line permanently in high state.
+	/// - The previous snow flake has a short holding data output in high state.
+	/// - The previous snow flake has a hardware or firmware problem holding data out permanently in high state.
+	///
+	TimeoutWaitingForLow = 1,
+	
+	/// A timeout occurred while waiting for the identifier from the previous element.
+	///
+	/// Possible reasons for this error:
+	/// - The firmware or hardware is not working as expected.
+	///
+	TimeoutWaitingForIdentifier = 2,
+	
+	/// A timeout while waiting for previous data to been sent.
+	///
+	/// Possible reasons for this error:
+	/// - The firmware is not working as expected.
+	/// 
+	TimeoutWaitingToSendData = 3,
+	
+	/// A timeout waiting for the initial synchronization.
+	///
+	/// Possible reasons for this error:
+	/// - The firmware is not working as expected.
+	///
+	TimeoutWaitingForInitialSynchronization = 4,
+		
+	/// Received a value, bit it is no valid identifier.
+	///
+	/// Possible reasons for this error:
+	/// - The data connection between the boards has interferences.
+	/// - The firmware on the previous board is not working as expected.
+	/// - The firmware on this board is not working as expected.
+	///
+	InvalidIdentifier = 5,
+};
 
 
 /// Initialize the communication component.
@@ -46,7 +98,15 @@ void initialize();
 /// The methods getIdentifier() and getStandLength() can be used after
 /// the negotiation.
 ///
-void waitForNegotiation();
+/// @return true on success, false on any error.
+///
+bool waitForNegotiation();
+
+/// Get the error code.
+///
+/// @return The error code.
+///
+Error getError();
 
 /// Check the identifier of this board.
 ///
@@ -61,29 +121,54 @@ void waitForNegotiation();
 ///
 uint8_t getIdentifier();
 	
-/// Get the length of the stand.
-///
-/// @return The number of snow flakes in the stand.
-///
-uint8_t getStandLength();
-
 /// Send data to all other boards.
 ///
 /// The sent 32bit are stored on all other devices. This method
 /// has only an effect on the master board with the identifier 0.
 /// It will trigger sending the data to all other boards.
 ///
-void sendData(uint32_t data);
+/// @param data The data value to send to all other boards.
+/// @return true on success, false if there was a time-out waiting for previous data begin sent.
+///
+bool sendData(uint32_t data);
 
 /// Send a synchronization request to all other boards in the strand.
 ///
-void sendSynchronization();
+/// @return true on success, false if there was a time-out waiting for previous data begin sent.
+///
+bool sendSynchronization();
 
-/// Get the currently stored data.
+/// Check if the previous data/signal send operation finished.
 ///
-/// This data is automatically received from the master board.
+/// @return true if the all previous data was sent and the component is ready to send more data.
 ///
-uint32_t getData();
+bool isReadyToSend();
+
+/// Wait until previous data/signal send operations finished.
+///
+/// @return true on success, false if there was a time-out.
+///
+bool waitUntilReadyToSend();
+
+/// Wait for data being received.
+///
+/// @param timeout The timeout in milliseconds.
+/// @return true on success, false if there was a time-out.
+///
+bool waitForData(uint32_t timeout);
+
+/// Read the last received data.
+///
+/// @return The last data value which was received.
+///
+uint32_t readData();
+
+/// Wait for a synchronization pulse.
+///
+/// @param timeout The timeout in milliseconds.
+/// @return true is the synchronization was received, or false if there was a timeout.
+///
+bool waitForSynchonization(uint32_t timeout);
 
 /// Register a synchronization function.
 ///

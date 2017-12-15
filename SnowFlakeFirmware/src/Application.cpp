@@ -22,7 +22,9 @@
 
 
 #include "Communication.hpp"
+#include "Configuration.hpp"
 #include "Display.hpp"
+#include "ElapsedTimer.hpp"
 #include "Hardware.hpp"
 #include "Helper.hpp"
 #include "SceneManager.hpp"
@@ -34,6 +36,32 @@
 
 namespace Application {
 	
+	
+// Forward declarations.
+void onDataReceived(uint32_t value);
+void onSynchronization();
+
+	
+/// The application state
+///
+enum class State {
+	/// The current scene is playing.
+	///
+	Play,
+	
+	/// Master sent the next scene index and waiting to send the synchronization.
+	///
+	SendSynchronization, 
+	
+	/// Blend the scene.
+	///
+	/// Master is waiting for the synchronization finished to be sent which
+	/// triggers the blend.
+	///
+	/// Slave received the synchronization and starts the blend.
+	///
+	BlendScene,
+};
 	
 /// The scenes to display.
 ///
@@ -61,13 +89,109 @@ const uint32_t cBlendDuration = 80;
 const uint32_t cSceneDuration = 30000;
 
 
-/// The currently displayed scene
+/// The mask for the "next scene" command.
 ///
-uint8_t gCurrentSceneIndex = 0;
+const uint32_t cCmdNextScene = 0xa5140000;
 
-/// The time of the last scene switch.
+
+/// The index of the next scene to display.
 ///
-uint32_t gLastSceneBlend = 0;
+volatile uint8_t gNextSceneIndex = 0;
+
+/// The state of the application.
+///
+volatile State gState = State::Play;
+
+/// The elapsed timer to measure the length of a scene.
+///
+ElapsedTimer gSceneElapsedTime;
+
+
+/// Display an error state with the LEDs of the board.
+///
+__attribute__((noreturn))
+void displayError(uint8_t errorCode)
+{
+	while (true) {
+		Display::setLedLevel(errorCode, Display::cMaximumLevel);
+		Display::synchronizeAndShow();
+		Helper::delayMs(500);	
+		Display::setLedLevel(errorCode, 0);
+		Display::synchronizeAndShow();
+		Helper::delayMs(500);
+	}
+}
+
+
+/// Run a communication test.
+///
+/// This will send a new value every two seconds and display it as binary 
+/// pattern on the snow flake.
+///
+void communicationTestMaster()
+{
+	Helper::delayMs(2000);
+	uint32_t value = 0;
+	while (true) {
+		for (uint8_t i = 0; i < Display::cLedCount; ++i) {
+			const bool isBitSet = ((value&(1UL<<i)) != 0);
+			Display::setLedLevel(i, (isBitSet ? Display::cMaximumLevel : 0));
+		}
+		Display::synchronizeAndShow();
+		Communication::sendData(value);
+		value += 1;
+		Helper::delayMs(2000);
+	}
+}
+
+
+/// Display the identifier of the board.
+///
+void displayBoardIdentifier()
+{
+	Display::setAllLedLevels(0);
+	Display::setLedLevel(Communication::getIdentifier(), Display::cMaximumLevel);
+	for (uint8_t i = 0; i < 10; ++i) {
+		Display::setLedLevel(Display::cLedCount-1, Display::cMaximumLevel);
+		Display::synchronizeAndShow();
+		Helper::delayMs(200);
+		Display::setLedLevel(Display::cLedCount-1, 0);
+		Display::synchronizeAndShow();
+		Helper::delayMs(200);
+	}
+}
+
+
+/// The initialization for a board in master mode.
+///
+void masterInitialize()
+{
+	// Decide about the first scene to display.
+	gNextSceneIndex = Helper::getRandom8(0, cScenesOnDisplayCount-1);
+		
+	// Send the scene number to all other boards.
+	Helper::delayMs(50);
+	Communication::sendData(cCmdNextScene + static_cast<uint8_t>(gNextSceneIndex));
+	Communication::waitUntilReadyToSend();
+	Helper::delayMs(50); // Wait until all boards are ready.
+	Communication::sendSynchronization();
+			
+	// Blend to the first scene from black.
+	Player::displayScene(Scene::Black);
+	Player::blendToScene(cScenesOnDisplay[gNextSceneIndex], cBlendDuration);
+	gSceneElapsedTime.start();
+	while (Player::getState() == Player::State::Blend) {
+		Player::animate();
+	}
+}
+
+
+/// The initialization for a board in slave mode.
+///
+void slaveInitialize()
+{
+	Player::displayScene(Scene::Black);
+}
 
 
 void initialize()
@@ -80,35 +204,103 @@ void initialize()
 	SceneManager::initialize();
 	Player::initialize();
 
-	// Blend to the first scene from black.
-	Player::displayScene(Scene::Black);
-	gCurrentSceneIndex = Helper::getRandom8(0, cScenesOnDisplayCount-1);
-	Player::blendToScene(cScenesOnDisplay[gCurrentSceneIndex], cBlendDuration);
-	while (Player::getState() == Player::State::Blend) {
-		Player::animate();
+	// Wait for the negotiation in the communication between the elements.
+	if (!Communication::waitForNegotiation()) {
+		// If there was any error, go into error mode.
+		displayError(static_cast<uint8_t>(Communication::getError()));
 	}
+
+	// Register the functions to receive data and the synchronization for boards in slave mode.
+	if (Communication::getIdentifier() != 0) {
+		Communication::registerReadDataFunction(&onDataReceived);
+		Communication::registerSynchronisationFunction(&onSynchronization);		
+	}
+
+	// If configured display the board identifier first.
+	if (cTraceShowIdentifierOnStart) {
+		displayBoardIdentifier();
+	}	
 	
-	// Get the current time as initial scene blend time.
-	gLastSceneBlend = Helper::getSystemTimeMs();
+	// Continue with the initialization based on the received identifier
+	if (Communication::getIdentifier() == 0) {
+		masterInitialize();
+	} else {
+		slaveInitialize();
+	}
+}
+
+
+/// The loop for a board in master mode.
+///
+__attribute__((noreturn))
+void masterLoop()
+{
+	while (true) {
+		// Animate the current scene.
+		Player::animate();
+		// Check if its time to think about the next scene
+		if (gState == State::Play && gSceneElapsedTime.elapsedTime() > (cSceneDuration - 50)) {
+			auto nextScene = Helper::getRandom8(0, cScenesOnDisplayCount-1);
+			while (nextScene == gNextSceneIndex) {
+				nextScene = Helper::getRandom8(0, cScenesOnDisplayCount-1);
+			}
+			gNextSceneIndex = nextScene;
+			Communication::sendData(cCmdNextScene + gNextSceneIndex);			
+			gState = State::SendSynchronization;
+		} else if (gState == State::SendSynchronization && gSceneElapsedTime.elapsedTime() >= cSceneDuration) {
+			Communication::sendSynchronization();
+			gState = State::BlendScene;
+		} else if (gState == State::BlendScene && Communication::isReadyToSend()) {
+			Player::blendToScene(cScenesOnDisplay[gNextSceneIndex], cBlendDuration);
+			gState = State::Play;
+			gSceneElapsedTime.start();			
+		}
+	}	
+}
+
+
+/// The function to receive data from the master.
+///
+void onDataReceived(uint32_t value)
+{
+	// Check incoming commands.
+	if ((value & 0xffff0000UL) == cCmdNextScene) {
+		gNextSceneIndex = (value & 0x000000ffUL);
+	}
+}
+
+
+/// The function to receive the synchronization from the master.
+///
+void onSynchronization()
+{
+	gState = State::BlendScene;
+}
+
+
+/// The loop for a board in slave mode.
+///
+__attribute__((noreturn))
+void slaveLoop()
+{
+	while (true) {
+		// Animate the current scene.
+		Player::animate();
+		// Act on application states
+		if (gState == State::BlendScene) {
+			Player::blendToScene(cScenesOnDisplay[gNextSceneIndex], cBlendDuration);
+			gState = State::Play;			
+		}
+	}
 }
 
 
 void loop()
 {
-	while (true) {
-		// Animate the current scene.
-		Player::animate();
-		// Check if it's time to blend to the next scene.
-		const uint32_t systemTime = Helper::getSystemTimeMs();
-		if ((systemTime - gLastSceneBlend) >= cSceneDuration && cScenesOnDisplayCount > 1) {
-			auto nextScene = Helper::getRandom8(0, cScenesOnDisplayCount-1);
-			while (nextScene == gCurrentSceneIndex) {
-				nextScene = Helper::getRandom8(0, cScenesOnDisplayCount-1);
-			}
-			gCurrentSceneIndex = nextScene;
-			Player::blendToScene(cScenesOnDisplay[gCurrentSceneIndex], cBlendDuration);
-			gLastSceneBlend = systemTime;	
-		}
+	if (Communication::getIdentifier() == 0) {
+		masterLoop();
+	} else {
+		slaveLoop();
 	}
 }
 
