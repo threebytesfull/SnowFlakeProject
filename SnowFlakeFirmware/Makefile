@@ -78,6 +78,12 @@ JLINKSPEED = 15000
 flash: main.bin segger.script
 	JLinkExe -if swd -device ATSAMD20E17 -speed $(JLINKSPEED) -CommanderScript segger.script
 
+jlink-status:
+	JLinkExe -if swd -device ATSAMD20E17 -speed $(JLINKSPEED) -CommanderScript segger-hwinfo.script
+
+jlink:
+	JLinkExe -if swd -device ATSAMD20E17 -speed $(JLINKSPEED)
+
 flash-bmp: main.elf
 	$(GDB) --batch \
 		-ex 'target extended-remote $(BMP_PORT)' \
@@ -101,4 +107,4 @@ clean:
 list: main.elf
 	$(OBJDUMP) -C -S $^
 
-.PHONY: all flash flash-bmp headers clean list
+.PHONY: all flash flash-bmp headers clean list jlink jlink-status
