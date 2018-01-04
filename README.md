@@ -17,15 +17,15 @@ Download the GNU ARM toolchain from the official release page:
 
 * [https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads)
 
-I used the `6-2017-q2-update` version (archive rather than installer, so I can choose where to put it).
+I used the `7-2017-q4-major` version (archive rather than installer, so I can choose where to put it).
 
 Unpack the toolchain archive:
 
-    tar -C $HOME/ARM -xf gcc-arm-none-eabi-6-2017-q2-update-mac.tar.bz2
+    tar -C $HOME/ARM -xf gcc-arm-none-eabi-7-2017-q4-major-mac.tar.bz2
 
 The GNU ARM toolchain needs to be in your PATH:
 
-    export PATH="$HOME/ARM/gcc-arm-none-eabi-6-2017-q2-update/bin:$PATH"
+    export PATH="$HOME/ARM/gcc-arm-none-eabi-7-2017-q4-major/bin:$PATH"
 
 ## ARM CMSIS 5
 
