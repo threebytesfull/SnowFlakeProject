@@ -33,16 +33,16 @@ Download the ARM CMSIS pack from the official releases page:
 
 * [https://github.com/ARM-software/CMSIS_5/releases](https://github.com/ARM-software/CMSIS_5/releases)
 
-I used [https://github.com/ARM-software/CMSIS_5/releases/download/5.2/ARM.CMSIS.5.2.pack](https://github.com/ARM-software/CMSIS_5/releases/download/5.2/ARM.CMSIS.5.2.pack).
+I used [https://github.com/ARM-software/CMSIS_5/releases/download/5.4/ARM.CMSIS.5.4.pack](https://github.com/ARM-software/CMSIS_5/releases/download/5.4/ARM.CMSIS.5.4.0.pack).
 
 Unpack the pack file with `unzip` (it's just a zipfile with a different extension):
 
-    unzip -D $HOME/ARM/CMSIS-5.2 ARM.CMSIS.5.2.pack
+    unzip -d $HOME/ARM/CMSIS-5.4 ARM.CMSIS.5.4.pack
 
 The `CMSIS` environment variable should point to the `CMSIS` directory inside
 it:
 
-    export CMSIS="$HOME/ARM/CMSIS-5.2/CMSIS"
+    export CMSIS="$HOME/ARM/CMSIS-5.4/CMSIS"
 
 ## Atmel SAMD20 Device Family Pack
 
@@ -51,6 +51,10 @@ Download the SAMD20 DFP from the official releases page:
 * [http://packs.download.atmel.com](http://packs.download.atmel.com)
 
 I used the version 1.2.91 pack.
+
+Unpack the atpack file with `unzip` (it's just a zipfile with a different extension):
+
+    unzip -d $HOME/ARM/SAMD20_DFP-1.2.91 Atmel.SAMD20_DFP.1.2.91.atpack
 
 The `SAMD20` environment variable should point to the `samd20` directory inside
 it:
