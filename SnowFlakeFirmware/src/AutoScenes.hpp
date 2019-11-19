@@ -1,7 +1,7 @@
 //
 // Snow Flake Project
 // ---------------------------------------------------------------------------
-// (c)2017 by Lucky Resistor. See LICENSE for details.
+// (c)2019 by Lucky Resistor. See LICENSE for details.
 // https://luckyresistor.me
 //
 // This program is free software; you can redistribute it and/or modify
@@ -21,37 +21,22 @@
 #pragma once
 
 
-#include "Fixed16.hpp"
-#include "Display.hpp"
-#include "PixelPosition.hpp"
+#include "Scene.hpp"
 
 
-/// Shared LED Maps
+/// One automatic scene mode.
 ///
-namespace LedMaps {
+struct AutoScenes {
+	const Scene::Name *scenes;
+	uint8_t count;
+};
 
 
-/// A map to for a clockwise motion.
+/// All different automatic scene modes.
 ///
-extern const Fixed16 cClockwise[Display::cLedCount];
+extern const AutoScenes cAutoScenes[];
 
-/// A map for a motion from top left to bottom right.
+/// The number of different automatic scene modes.
 ///
-extern const Fixed16 cDiagonal[Display::cLedCount];
+extern const uint8_t cAutoScenesCount;
 
-/// A map for circular motion.
-///
-extern const Fixed16 cCircular[Display::cLedCount];
-
-
-/// An index array map to fully rotate the maps.
-///
-extern const uint8_t cIndexRotation[6][Display::cLedCount];
-
-
-/// A LED map for a 9x9 canvas.
-///
-extern const PixelPosition cCanvas9x9[Display::cLedCount];
-
-
-}

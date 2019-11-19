@@ -1,7 +1,7 @@
 //
 // Snow Flake Project
 // ---------------------------------------------------------------------------
-// (c)2017 by Lucky Resistor. See LICENSE for details.
+// (c)2017-2019 by Lucky Resistor. See LICENSE for details.
 // https://luckyresistor.me
 //
 // This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,13 @@
 ///
 namespace Communication {
 
+/// A button press by the user.
+///
+enum class ButtonPress : uint8_t {
+	None, ///< No button press.
+	Short, ///< A short press 100-1500ms
+	Long, ///< A long press 1500-5000ms
+};
 
 /// The function called after a synchronization request is received on a client.
 ///
@@ -162,6 +169,10 @@ bool waitForData(uint32_t timeout);
 /// @return The last data value which was received.
 ///
 uint32_t readData();
+
+/// Get the next button press from the queue.
+///
+ButtonPress getNextButtonPress();
 
 /// Wait for a synchronization pulse.
 ///
