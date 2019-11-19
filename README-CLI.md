@@ -17,15 +17,15 @@ Download the GNU ARM toolchain from the official release page:
 
 * [https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads)
 
-I used the `7-2017-q4-major` version (archive rather than installer, so I can choose where to put it).
+I used the `9-2019-q4-major` version (archive rather than installer, so I can choose where to put it).
 
 Unpack the toolchain archive:
 
-    tar -C $HOME/ARM -xf gcc-arm-none-eabi-7-2017-q4-major-mac.tar.bz2
+    tar -C $HOME/ARM -xf gcc-arm-none-eabi-9-2019-q4-major-mac.tar.bz2
 
 The GNU ARM toolchain needs to be in your PATH:
 
-    export PATH="$HOME/ARM/gcc-arm-none-eabi-7-2017-q4-major/bin:$PATH"
+    export PATH="$HOME/ARM/gcc-arm-none-eabi-9-2019-q4-major/bin:$PATH"
 
 ## ARM CMSIS 5
 
@@ -33,16 +33,16 @@ Download the ARM CMSIS pack from the official releases page:
 
 * [https://github.com/ARM-software/CMSIS_5/releases](https://github.com/ARM-software/CMSIS_5/releases)
 
-I used [https://github.com/ARM-software/CMSIS_5/releases/download/5.4/ARM.CMSIS.5.4.pack](https://github.com/ARM-software/CMSIS_5/releases/download/5.4/ARM.CMSIS.5.4.0.pack).
+I used [https://github.com/ARM-software/CMSIS_5/releases/download/5.6.0/ARM.CMSIS.5.6.0.pack](https://github.com/ARM-software/CMSIS_5/releases/download/5.6.0/ARM.CMSIS.5.6.0.pack).
 
 Unpack the pack file with `unzip` (it's just a zipfile with a different extension):
 
-    unzip -d $HOME/ARM/CMSIS-5.4 ARM.CMSIS.5.4.pack
+    unzip -d $HOME/ARM/CMSIS-5.6.0 ARM.CMSIS.5.6.0.pack
 
 The `CMSIS` environment variable should point to the `CMSIS` directory inside
 it:
 
-    export CMSIS="$HOME/ARM/CMSIS-5.4/CMSIS"
+    export CMSIS="$HOME/ARM/CMSIS-5.6.0/CMSIS"
 
 ## Atmel SAMD20 Device Family Pack
 
@@ -50,16 +50,16 @@ Download the SAMD20 DFP from the official releases page:
 
 * [http://packs.download.atmel.com](http://packs.download.atmel.com)
 
-I used the version 1.2.91 pack.
+I used the version 1.3.124 pack.
 
 Unpack the atpack file with `unzip` (it's just a zipfile with a different extension):
 
-    unzip -d $HOME/ARM/SAMD20_DFP-1.2.91 Atmel.SAMD20_DFP.1.2.91.atpack
+    unzip -d $HOME/ARM/SAMD20_DFP-1.3.124 Atmel.SAMD20_DFP.1.3.124.atpack
 
 The `SAMD20` environment variable should point to the `samd20` directory inside
 it:
 
-    export SAMD20="$HOME/ARM/SAMD20_DFP-1.2.91/samd20"
+    export SAMD20="$HOME/ARM/SAMD20_DFP-1.3.124/samd20"
 
 # Building
 
