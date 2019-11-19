@@ -18,14 +18,14 @@ GDB=$(CROSS_COMPILE)gdb
 
 INC += -I $(CMSIS)/Include -I $(SAMD20)/include
 
-CFLAGS += -mthumb -D__SAMD20E17__ $(INC)
+CFLAGS += -mthumb -D__SAMD20E15__ $(INC)
 CFLAGS += -ffunction-sections -Wall -mcpu=cortex-m0plus -c -std=gnu99
 
-CXXFLAGS += -mthumb -D__SAMD20E17__ $(INC)
+CXXFLAGS += -mthumb -D__SAMD20E15__ $(INC)
 CXXFLAGS += -ffunction-sections -funsafe-math-optimizations
 CXXFLAGS += -ffast-math -fno-rtti -fno-exceptions -Wall -mcpu=cortex-m0plus -c
 
-LDSCRIPT = Device_Startup/samd20e17_flash.ld
+LDSCRIPT = Device_Startup/samd20e15b_flash.ld
 
 LDFLAGS += -mthumb -Wl,-Map=main.map --specs=nano.specs --specs=nosys.specs
 LDFLAGS += -Wl,--start-group -lm -Wl,--end-group -L Device_Startup -Wl,--gc-sections
@@ -76,13 +76,13 @@ size: main.elf
 JLINKSPEED = 15000
 
 flash: main.bin segger.script
-	JLinkExe -if swd -device ATSAMD20E17 -speed $(JLINKSPEED) -CommanderScript segger.script
+	JLinkExe -if swd -device ATSAMD20E15 -speed $(JLINKSPEED) -CommanderScript segger.script
 
 jlink-status:
-	JLinkExe -if swd -device ATSAMD20E17 -speed $(JLINKSPEED) -CommanderScript segger-hwinfo.script
+	JLinkExe -if swd -device ATSAMD20E15 -speed $(JLINKSPEED) -CommanderScript segger-hwinfo.script
 
 jlink:
-	JLinkExe -if swd -device ATSAMD20E17 -speed $(JLINKSPEED)
+	JLinkExe -if swd -device ATSAMD20E15 -speed $(JLINKSPEED)
 
 flash-bmp: main.elf
 	$(GDB) --batch \
